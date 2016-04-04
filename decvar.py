@@ -64,7 +64,7 @@ class DECVAR(object):
         self.GWMFILE = GWMFILE
         self.FVAR_df = model.obj_df[model.obj_df['vType'] == 'flux']
         self.EVAR_df = model.obj_df[model.obj_df['vType'] == 'external']
-        self.BVAR_df = model.obj_df[model.obj_df['binaryName'] != None]
+        self.BVAR_df = model.obj_df[model.obj_df['binaryName'].notnull()]
         self.workspace = model.workspace
         self.name = model.name
         self.fileToBeWritten = len(self.FVAR_df.index) + len(self.EVAR_df.index) + len(self.BVAR_df.index) > 0
@@ -113,8 +113,10 @@ class VARCON(object):
         lines.append(str(self.IPRN) + ' # IPRN' + '\n')
         
         for i in self.varcon_df.index.tolist():
-            lines.append(str(self.varcon_df.at[i,'name']) + ' ' + str(float(self.varcon_df.at[i,'min'])) + ' ' + str(float(self.varcon_df.at[i,'max'])) + ' ' + str(float(self.varcon_df.at[i,'ref'])) + '\n')
-
+            if str(self.varcon_df.at[i,'vType']) == 'flux':
+                lines.append(str(self.varcon_df.at[i,'name']) + ' ' + str(float(self.varcon_df.at[i,'min'])) + ' ' + str(float(self.varcon_df.at[i,'max'])) + ' ' + str(float(self.varcon_df.at[i,'ref'])) + '\n')
+            else:
+                lines.append(str(self.varcon_df.at[i,'name']) + ' ' + str(float(self.varcon_df.at[i,'min'])) + ' ' + str(float(self.varcon_df.at[i,'max'])) + ' ' + '\n')
         self.newFileName = os.path.join(self.workspace, self.name + '.varcon')
         with open(self.newFileName, 'w') as newFile:
             newFile.writelines(lines)
@@ -127,8 +129,8 @@ class SUMCON(object):
     """
     def __init__(self, model, IPRN = None):
         self.IPRN = IPRN if IPRN is not None else model.IPRN
-        self.BINSUM_df = model.obj_df[['binarySumName','binaryName','binarySumCoef']][model.obj_df['binarySumName'] != None]
-        self.SUM_df = model.obj_df[['sumName','name','sumCoef']][model.obj_df['sumName'] != None]
+        self.BINSUM_df = model.obj_df[['binarySumName','binaryName','binarySumCoef']][model.obj_df['binarySumName'].notnull()]
+        self.SUM_df = model.obj_df[['sumName','name','sumCoef']][model.obj_df['sumName'].notnull()]
         self.sumcon_df = model.sumcon_df
         self.workspace = model.workspace
         self.name = model.name
@@ -207,9 +209,9 @@ class OBJFNC(object):
         self.FNTYP = str(model.json_data['objectiveFunction']['functionType'])
         self.OBJTYP = str(model.json_data['objectiveFunction']['objectiveType'])
         self.IPRN = IPRN if IPRN is not None else model.IPRN
-        self.FOBJ_df = model.obj_df[model.obj_df['vType'] == 'flux'][model.obj_df['objectiveRateFlg'] == 'y'] 
-        self.EOBJ_df = model.obj_df[model.obj_df['vType'] == 'external'][model.obj_df['objectiveRateFlg'] == 'y']
-        self.BOBJ_df = model.obj_df[model.obj_df['binaryName'] != None][model.obj_df['objectiveBinFlg'] == 'y']
+        self.FOBJ_df = model.obj_df[model.obj_df['vType'] == 'flux'][model.obj_df['objectiveRateFlg'] == 'Y'] 
+        self.EOBJ_df = model.obj_df[model.obj_df['vType'] == 'external'][model.obj_df['objectiveRateFlg'] == 'Y']
+        self.BOBJ_df = model.obj_df[model.obj_df['binaryName'].notnull()][model.obj_df['objectiveBinFlg'] == 'Y']
         self.workspace = model.workspace
         self.name = model.name
         self.fileToBeWritten = len(self.FOBJ_df.index) + len(self.EOBJ_df.index) + len(self.BOBJ_df.index) > 0
@@ -287,12 +289,12 @@ class SOLN(object):
 
 
 ########################################################################################################################################
-with open('C:\\Users\\aybulat\\Desktop\\projects\\gwm.json') as json_file:
+with open('C:\\Users\\pk\\Desktop\\scripts\\gwm.json') as json_file:
     json_data = json.load(json_file)
 
         
 name = 'test'
-workspace = 'C:\\Users\\aybulat\\Desktop\\projects\\gwm'
+workspace = 'C:\\Users\\pk\\Desktop\\scripts\\gwm'
 IPRN = 1    
 mod = GWM(name, workspace, IPRN, json_data)
 decvar = DECVAR(mod)
@@ -302,3 +304,4 @@ objfnc = OBJFNC(mod)
 soln = SOLN(mod)
 hedcon = HEDCON(mod)
 mod.writeInput()
+mod.writeFileGWM()
